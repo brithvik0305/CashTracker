@@ -26,6 +26,7 @@ export const queryKeys = {
   categories: ['categories'] as const,
   recentTransactions: ['transactions', 'recent'] as const,
   incomeSummary: ['summary', 'income'] as const,
+  weeklySummary: ['summary', 'weekly'] as const,
 } as const;
 
 /** Query keys that any money movement can affect — invalidate together after writes. */
@@ -33,4 +34,5 @@ export const moneyQueryKeys = [
   queryKeys.accounts,
   queryKeys.recentTransactions,
   queryKeys.incomeSummary,
+  queryKeys.weeklySummary,
 ] as const;

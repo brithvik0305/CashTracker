@@ -1,17 +1,23 @@
 /**
  * Home / dashboard.
  *
- * Live from the ledger: Safe To Spend, Net Available, Total Cash, weekly/monthly/
- * yearly income, and recent activity. The remaining Safe-To-Spend components
- * (owed to/by you, card bills) are zero until their milestones land.
+ * Live from the ledger: Safe To Spend, Net Available, Total Cash, weekly spending
+ * indicator, weekly/monthly/yearly income, recent activity, and quick actions.
+ * The remaining Safe-To-Spend components (owed to/by you, card bills) are zero
+ * until their milestones land.
  */
 
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/screen';
 import { StatCard } from '@/components/stat-card';
 import { ThemedText } from '@/components/themed-text';
+import { WeeklySpendingCard } from '@/components/dashboard/weekly-spending-card';
+import { AddExpenseModal } from '@/components/transactions/add-expense-modal';
+import { AddIncomeModal } from '@/components/transactions/add-income-modal';
 import { TransactionRow } from '@/components/transactions/transaction-row';
+import { Button } from '@/components/ui/button';
 import { Radii, Spacing } from '@/constants/theme';
 import { formatMoney } from '@/domain/money';
 import { useFinancialPosition } from '@/hooks/use-financial-position';
@@ -33,6 +39,7 @@ export default function HomeScreen() {
   const { totalCash, safeToSpend, netAvailable } = useFinancialPosition();
   const { data: income } = useIncomeSummary();
   const { data: recent } = useRecentTransactions(6);
+  const [modal, setModal] = useState<null | 'income' | 'expense'>(null);
 
   const incomeCols = [
     { label: 'This week', value: income?.weekly ?? 0 },
@@ -54,6 +61,18 @@ export default function HomeScreen() {
         <StatCard label="Total Cash" value={formatMoney(totalCash)} />
         <StatCard label="Net Available" value={formatMoney(netAvailable)} />
       </View>
+
+      <View style={styles.row}>
+        <Button title="Add income" onPress={() => setModal('income')} style={styles.action} />
+        <Button
+          title="Add expense"
+          variant="secondary"
+          onPress={() => setModal('expense')}
+          style={styles.action}
+        />
+      </View>
+
+      <WeeklySpendingCard />
 
       <Card>
         <ThemedText type="smallBold" themeColor="textSecondary">
@@ -88,10 +107,13 @@ export default function HomeScreen() {
           </View>
         ) : (
           <ThemedText type="small" themeColor="textTertiary">
-            No transactions yet. Use the Add tab to record income or an expense.
+            No transactions yet. Use the buttons above or the Add tab to record income or an expense.
           </ThemedText>
         )}
       </Card>
+
+      <AddIncomeModal visible={modal === 'income'} onClose={() => setModal(null)} />
+      <AddExpenseModal visible={modal === 'expense'} onClose={() => setModal(null)} />
     </Screen>
   );
 }
@@ -100,6 +122,9 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: Spacing.three,
+  },
+  action: {
+    flex: 1,
   },
   card: {
     borderWidth: StyleSheet.hairlineWidth,
