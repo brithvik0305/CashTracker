@@ -14,9 +14,11 @@ interface DateFieldProps {
   label?: string;
   value: Date;
   onChange: (date: Date) => void;
+  /** Latest selectable date. Defaults to today; pass null to allow future dates. */
+  maximumDate?: Date | null;
 }
 
-export function DateField({ label, value, onChange }: DateFieldProps) {
+export function DateField({ label, value, onChange, maximumDate = new Date() }: DateFieldProps) {
   const theme = useTheme();
   const [show, setShow] = useState(false);
 
@@ -37,7 +39,7 @@ export function DateField({ label, value, onChange }: DateFieldProps) {
         <DateTimePicker
           value={value}
           mode="date"
-          maximumDate={new Date()}
+          maximumDate={maximumDate ?? undefined}
           onChange={(_, selected) => {
             setShow(false);
             if (selected) onChange(selected);

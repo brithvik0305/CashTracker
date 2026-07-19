@@ -24,6 +24,7 @@ export const queryKeys = {
   settings: ['settings'] as const,
   accounts: ['accounts'] as const,
   categories: ['categories'] as const,
+  creditCards: ['creditCards'] as const,
   recentTransactions: ['transactions', 'recent'] as const,
   incomeSummary: ['summary', 'income'] as const,
   weeklySummary: ['summary', 'weekly'] as const,
@@ -32,6 +33,7 @@ export const queryKeys = {
 /** Query keys that any money movement can affect — invalidate together after writes. */
 export const moneyQueryKeys = [
   queryKeys.accounts,
+  queryKeys.creditCards,
   queryKeys.recentTransactions,
   queryKeys.incomeSummary,
   queryKeys.weeklySummary,

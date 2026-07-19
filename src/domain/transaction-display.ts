@@ -26,9 +26,9 @@ export function describeTransaction(t: TransactionListItem): TransactionDisplay 
     case 'expense':
       return { ...base, title: t.category_name || 'Expense', tone: 'negative', icon: 'cart-outline' };
     case 'cc_purchase':
-      return { ...base, title: t.category_name || 'Card purchase', tone: 'neutral', icon: 'card-outline' };
+      return { subtitle: t.card_name, amount: t.amount, title: t.category_name || 'Card purchase', tone: 'neutral', icon: 'card-outline' };
     case 'cc_payment':
-      return { ...base, title: 'Card payment', tone: 'negative', icon: 'card-outline' };
+      return { subtitle: t.card_name, amount: t.amount, title: 'Card payment', tone: 'negative', icon: 'card-outline' };
     case 'lend':
       return { ...base, title: `Lent to ${t.counterparty ?? '—'}`, tone: 'negative', icon: 'arrow-up-circle-outline' };
     case 'lend_return':

@@ -106,4 +106,30 @@ export const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category_id);
     `,
   },
+  {
+    version: 4,
+    name: 'credit_cards',
+    up: `
+      CREATE TABLE IF NOT EXISTS credit_cards (
+        id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+        name                TEXT    NOT NULL,
+        credit_limit        INTEGER NOT NULL DEFAULT 0,   -- paise
+        opening_outstanding INTEGER NOT NULL DEFAULT 0,   -- owed when the card was added (paise)
+        statement_amount    INTEGER NOT NULL DEFAULT 0,   -- latest billed statement (paise)
+        statement_date      TEXT,                         -- 'YYYY-MM-DD', nullable
+        due_date            TEXT,                         -- 'YYYY-MM-DD', nullable
+        is_archived         INTEGER NOT NULL DEFAULT 0 CHECK (is_archived IN (0, 1)),
+        sort_order          INTEGER NOT NULL DEFAULT 0,
+        created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
+        updated_at          TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+
+      -- A card purchase adds to outstanding (amount > 0, no bank account). A card
+      -- payment reduces both the bank account and the card outstanding, and counts
+      -- as spending. Both link here.
+      ALTER TABLE transactions ADD COLUMN credit_card_id INTEGER REFERENCES credit_cards(id);
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_card ON transactions(credit_card_id);
+    `,
+  },
 ];

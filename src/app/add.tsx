@@ -1,19 +1,23 @@
 /**
- * Add tab — quick actions that open entry sheets. Income and expenses land here
- * in M2; credit-card, lending, borrowing, and investment actions join later.
+ * Add tab — quick actions that open entry sheets: income, expense, credit-card
+ * purchase, credit-card payment, and category management.
  */
 
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Screen } from '@/components/screen';
+import { AddCardPaymentModal } from '@/components/cards/add-card-payment-modal';
+import { AddCardPurchaseModal } from '@/components/cards/add-card-purchase-modal';
 import { AddExpenseModal } from '@/components/transactions/add-expense-modal';
 import { AddIncomeModal } from '@/components/transactions/add-income-modal';
 import { ManageCategoriesModal } from '@/components/transactions/manage-categories-modal';
 import { ActionTile } from '@/components/ui/action-tile';
 
+type Modal = 'income' | 'expense' | 'purchase' | 'payment' | 'categories';
+
 export default function AddScreen() {
-  const [modal, setModal] = useState<null | 'income' | 'expense' | 'categories'>(null);
+  const [modal, setModal] = useState<Modal | null>(null);
 
   return (
     <Screen title="Add" subtitle="Record a transaction">
@@ -33,6 +37,20 @@ export default function AddScreen() {
           onPress={() => setModal('expense')}
         />
         <ActionTile
+          icon="card-outline"
+          tone="brand"
+          title="Card purchase"
+          subtitle="Charge to a credit card (not an expense yet)"
+          onPress={() => setModal('purchase')}
+        />
+        <ActionTile
+          icon="cash-outline"
+          tone="caution"
+          title="Card payment"
+          subtitle="Pay a card bill from a bank account"
+          onPress={() => setModal('payment')}
+        />
+        <ActionTile
           icon="pricetags-outline"
           tone="brand"
           title="Manage categories"
@@ -43,6 +61,8 @@ export default function AddScreen() {
 
       <AddIncomeModal visible={modal === 'income'} onClose={() => setModal(null)} />
       <AddExpenseModal visible={modal === 'expense'} onClose={() => setModal(null)} />
+      <AddCardPurchaseModal visible={modal === 'purchase'} onClose={() => setModal(null)} />
+      <AddCardPaymentModal visible={modal === 'payment'} onClose={() => setModal(null)} />
       <ManageCategoriesModal visible={modal === 'categories'} onClose={() => setModal(null)} />
     </Screen>
   );

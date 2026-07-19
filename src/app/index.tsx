@@ -16,14 +16,18 @@ import { ThemedText } from '@/components/themed-text';
 import { WeeklySpendingCard } from '@/components/dashboard/weekly-spending-card';
 import { AddExpenseModal } from '@/components/transactions/add-expense-modal';
 import { AddIncomeModal } from '@/components/transactions/add-income-modal';
+import { TransactionDetailModal } from '@/components/transactions/transaction-detail-modal';
 import { TransactionRow } from '@/components/transactions/transaction-row';
 import { Button } from '@/components/ui/button';
 import { Radii, Spacing } from '@/constants/theme';
 import { formatMoney } from '@/domain/money';
+import { useCreditCards } from '@/hooks/use-credit-cards';
 import { useFinancialPosition } from '@/hooks/use-financial-position';
 import { useIncomeSummary } from '@/hooks/use-income-summary';
 import { useRecentTransactions } from '@/hooks/use-transactions';
 import { useTheme } from '@/hooks/use-theme';
+import { formatDisplayDate } from '@/lib/date';
+import type { TransactionListItem } from '@/schemas/transaction';
 
 function Card({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
@@ -36,10 +40,16 @@ function Card({ children }: { children: React.ReactNode }) {
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const { totalCash, safeToSpend, netAvailable } = useFinancialPosition();
+  const { totalCash, safeToSpend, netAvailable, cardOutstanding } = useFinancialPosition();
   const { data: income } = useIncomeSummary();
+  const { data: cards } = useCreditCards();
   const { data: recent } = useRecentTransactions(6);
   const [modal, setModal] = useState<null | 'income' | 'expense'>(null);
+  const [detail, setDetail] = useState<TransactionListItem | null>(null);
+
+  const nextDue = (cards ?? [])
+    .filter((c) => c.statement_outstanding > 0 && c.due_date)
+    .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))[0];
 
   const incomeCols = [
     { label: 'This week', value: income?.weekly ?? 0 },
@@ -74,6 +84,24 @@ export default function HomeScreen() {
 
       <WeeklySpendingCard />
 
+      {cards && cards.length > 0 && (
+        <Card>
+          <View style={styles.cardsHeader}>
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              CREDIT CARDS
+            </ThemedText>
+            <ThemedText type="smallBold" themeColor="text" style={styles.incomeValue}>
+              {formatMoney(cardOutstanding)}
+            </ThemedText>
+          </View>
+          <ThemedText type="small" themeColor="textTertiary">
+            {nextDue
+              ? `${formatMoney(nextDue.statement_outstanding)} due by ${formatDisplayDate(nextDue.due_date!)} on ${nextDue.name}`
+              : 'No statements due right now.'}
+          </ThemedText>
+        </Card>
+      )}
+
       <Card>
         <ThemedText type="smallBold" themeColor="textSecondary">
           INCOME
@@ -101,7 +129,7 @@ export default function HomeScreen() {
             {recent.map((item, i) => (
               <View key={item.id}>
                 {i > 0 && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
-                <TransactionRow item={item} />
+                <TransactionRow item={item} onPress={() => setDetail(item)} />
               </View>
             ))}
           </View>
@@ -114,6 +142,7 @@ export default function HomeScreen() {
 
       <AddIncomeModal visible={modal === 'income'} onClose={() => setModal(null)} />
       <AddExpenseModal visible={modal === 'expense'} onClose={() => setModal(null)} />
+      <TransactionDetailModal item={detail} onClose={() => setDetail(null)} />
     </Screen>
   );
 }
@@ -131,6 +160,11 @@ const styles = StyleSheet.create({
     borderRadius: Radii.lg,
     padding: Spacing.three,
     gap: Spacing.two,
+  },
+  cardsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   incomeRow: {
     flexDirection: 'row',

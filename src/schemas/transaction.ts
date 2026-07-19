@@ -28,6 +28,7 @@ export const TransactionSchema = z.object({
   amount: z.number().int(),
   account_id: z.number().int().nullable(),
   category_id: z.number().int().nullable(),
+  credit_card_id: z.number().int().nullable(),
   counterparty: z.string().nullable(),
   transfer_group_id: z.string().nullable(),
   date: z.string(),
@@ -37,9 +38,10 @@ export const TransactionSchema = z.object({
 });
 export type Transaction = z.infer<typeof TransactionSchema>;
 
-/** A ledger row enriched with joined account/category names for display. */
+/** A ledger row enriched with joined account/category/card names for display. */
 export const TransactionListItemSchema = TransactionSchema.extend({
   account_name: z.string().nullable(),
   category_name: z.string().nullable(),
+  card_name: z.string().nullable(),
 });
 export type TransactionListItem = z.infer<typeof TransactionListItemSchema>;

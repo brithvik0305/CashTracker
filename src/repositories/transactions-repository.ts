@@ -22,6 +22,7 @@ export interface NewTransaction {
   amount: number;
   account_id?: number | null;
   category_id?: number | null;
+  credit_card_id?: number | null;
   counterparty?: string | null;
   transfer_group_id?: string | null;
   date: string; // 'YYYY-MM-DD'
@@ -32,13 +33,14 @@ export async function createTransaction(tx: NewTransaction): Promise<number> {
   const db = await getDb();
   const result = await db.runAsync(
     `INSERT INTO transactions
-       (type, amount, account_id, category_id, counterparty, transfer_group_id, date, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (type, amount, account_id, category_id, credit_card_id, counterparty, transfer_group_id, date, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       tx.type,
       tx.amount,
       tx.account_id ?? null,
       tx.category_id ?? null,
+      tx.credit_card_id ?? null,
       tx.counterparty ?? null,
       tx.transfer_group_id ?? null,
       tx.date,
@@ -92,17 +94,62 @@ export async function addExpense(input: ExpenseInput): Promise<number> {
   });
 }
 
+export interface CardPurchaseInput {
+  cardId: number;
+  /** Positive paise charged to the card. */
+  amount: number;
+  categoryId?: number | null;
+  date?: string;
+  notes?: string | null;
+}
+
+/** A card purchase increases the card's outstanding. It is NOT an expense and touches no bank account. */
+export async function addCardPurchase(input: CardPurchaseInput): Promise<number> {
+  if (input.amount <= 0) throw new Error('Purchase must be greater than zero.');
+  return createTransaction({
+    type: 'cc_purchase',
+    amount: input.amount,
+    credit_card_id: input.cardId,
+    category_id: input.categoryId ?? null,
+    date: input.date ?? todayISODate(),
+    notes: input.notes ?? null,
+  });
+}
+
+export interface CardPaymentInput {
+  cardId: number;
+  accountId: number;
+  /** Positive paise paid from the bank towards the card. */
+  amount: number;
+  date?: string;
+  notes?: string | null;
+}
+
+/** Paying a card bill lowers the bank account and the card outstanding, and counts as spending. */
+export async function addCardPayment(input: CardPaymentInput): Promise<number> {
+  if (input.amount <= 0) throw new Error('Payment must be greater than zero.');
+  return createTransaction({
+    type: 'cc_payment',
+    amount: -input.amount,
+    account_id: input.accountId,
+    credit_card_id: input.cardId,
+    date: input.date ?? todayISODate(),
+    notes: input.notes ?? null,
+  });
+}
+
 /**
- * Recent ledger rows enriched with account/category names, most recent first.
+ * Recent ledger rows enriched with account/category/card names, most recent first.
  * Transfers appear once (the outgoing leg) rather than as two rows.
  */
 export async function listRecentTransactions(limit = 8): Promise<TransactionListItem[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<Record<string, unknown>>(
-    `SELECT t.*, a.name AS account_name, c.name AS category_name
+    `SELECT t.*, a.name AS account_name, c.name AS category_name, cc.name AS card_name
      FROM transactions t
-     LEFT JOIN accounts a   ON a.id = t.account_id
-     LEFT JOIN categories c ON c.id = t.category_id
+     LEFT JOIN accounts a      ON a.id = t.account_id
+     LEFT JOIN categories c    ON c.id = t.category_id
+     LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
      WHERE t.type != 'transfer' OR t.amount < 0
      ORDER BY t.date DESC, t.created_at DESC
      LIMIT ?`,
@@ -162,4 +209,96 @@ export async function listTransactionsByAccount(accountId: number): Promise<Tran
 export async function deleteTransaction(id: number): Promise<void> {
   const db = await getDb();
   await db.runAsync('DELETE FROM transactions WHERE id = ?', [id]);
+}
+
+/** Delete a transaction; for a transfer, remove BOTH legs so balances stay consistent. */
+export async function deleteTransactionCascade(item: TransactionListItem): Promise<void> {
+  const db = await getDb();
+  if (item.type === 'transfer' && item.transfer_group_id) {
+    await db.runAsync('DELETE FROM transactions WHERE transfer_group_id = ?', [
+      item.transfer_group_id,
+    ]);
+  } else {
+    await db.runAsync('DELETE FROM transactions WHERE id = ?', [item.id]);
+  }
+}
+
+export interface EditValues {
+  /** Positive paise magnitude; the correct sign is applied per transaction type. */
+  amount: number;
+  date: string;
+  notes: string | null;
+  accountId?: number | null;
+  cardId?: number | null;
+  categoryId?: number | null;
+  client?: string | null;
+  /** For adjustments only: +1 to increase the balance, -1 to decrease it. */
+  direction?: 1 | -1;
+}
+
+const TOUCH = "updated_at = datetime('now')";
+
+/**
+ * Edit an existing transaction in place. Fields are set according to the row's
+ * type, and the signed `amount` is recomputed. Transfers update both legs.
+ * Balances are derived, so they correct themselves once the row changes.
+ */
+export async function editTransaction(item: TransactionListItem, v: EditValues): Promise<void> {
+  const db = await getDb();
+
+  switch (item.type) {
+    case 'income':
+      await db.runAsync(
+        `UPDATE transactions SET amount = ?, account_id = ?, category_id = NULL,
+           credit_card_id = NULL, counterparty = ?, date = ?, notes = ?, ${TOUCH} WHERE id = ?`,
+        [v.amount, v.accountId ?? null, v.client ?? null, v.date, v.notes, item.id],
+      );
+      return;
+    case 'expense':
+      await db.runAsync(
+        `UPDATE transactions SET amount = ?, account_id = ?, category_id = ?,
+           credit_card_id = NULL, counterparty = NULL, date = ?, notes = ?, ${TOUCH} WHERE id = ?`,
+        [-v.amount, v.accountId ?? null, v.categoryId ?? null, v.date, v.notes, item.id],
+      );
+      return;
+    case 'cc_purchase':
+      await db.runAsync(
+        `UPDATE transactions SET amount = ?, account_id = NULL, category_id = ?,
+           credit_card_id = ?, counterparty = NULL, date = ?, notes = ?, ${TOUCH} WHERE id = ?`,
+        [v.amount, v.categoryId ?? null, v.cardId ?? null, v.date, v.notes, item.id],
+      );
+      return;
+    case 'cc_payment':
+      await db.runAsync(
+        `UPDATE transactions SET amount = ?, account_id = ?, category_id = NULL,
+           credit_card_id = ?, counterparty = NULL, date = ?, notes = ?, ${TOUCH} WHERE id = ?`,
+        [-v.amount, v.accountId ?? null, v.cardId ?? null, v.date, v.notes, item.id],
+      );
+      return;
+    case 'adjustment':
+      await db.runAsync(
+        `UPDATE transactions SET amount = ?, date = ?, notes = ?, ${TOUCH} WHERE id = ?`,
+        [(v.direction ?? 1) * v.amount, v.date, v.notes, item.id],
+      );
+      return;
+    case 'transfer': {
+      if (!item.transfer_group_id) throw new Error('Transfer has no group.');
+      const legs = await db.getAllAsync<{ id: number; amount: number }>(
+        'SELECT id, amount FROM transactions WHERE transfer_group_id = ?',
+        [item.transfer_group_id],
+      );
+      await db.withTransactionAsync(async () => {
+        for (const leg of legs) {
+          const signed = leg.amount < 0 ? -v.amount : v.amount;
+          await db.runAsync(
+            `UPDATE transactions SET amount = ?, date = ?, notes = ?, ${TOUCH} WHERE id = ?`,
+            [signed, v.date, v.notes, leg.id],
+          );
+        }
+      });
+      return;
+    }
+    default:
+      throw new Error(`Editing ${item.type} is not supported.`);
+  }
 }

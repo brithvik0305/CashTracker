@@ -1,7 +1,7 @@
 /** A single row in a transaction list / timeline. */
 
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radii, Spacing, type ThemeColor } from '@/constants/theme';
@@ -17,13 +17,22 @@ const TONE_COLOR: Record<DisplayTone, ThemeColor> = {
   neutral: 'text',
 };
 
-export function TransactionRow({ item }: { item: TransactionListItem }) {
+export function TransactionRow({
+  item,
+  onPress,
+}: {
+  item: TransactionListItem;
+  onPress?: () => void;
+}) {
   const theme = useTheme();
   const d = describeTransaction(item);
   const subtitleParts = [d.subtitle, formatDisplayDate(item.date)].filter(Boolean);
 
   return (
-    <View style={styles.row}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [styles.row, { opacity: pressed && onPress ? 0.6 : 1 }]}>
       <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
         <Ionicons name={d.icon as never} size={18} color={theme.textSecondary} />
       </View>
@@ -38,9 +47,9 @@ export function TransactionRow({ item }: { item: TransactionListItem }) {
         )}
       </View>
       <ThemedText type="smallBold" themeColor={TONE_COLOR[d.tone]} style={styles.amount}>
-        {formatMoney(d.amount, { signed: d.amount > 0 })}
+        {formatMoney(d.amount, { signed: d.tone === 'positive' })}
       </ThemedText>
-    </View>
+    </Pressable>
   );
 }
 
