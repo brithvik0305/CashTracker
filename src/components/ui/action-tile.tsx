@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radii, Spacing, type ThemeColor } from '@/constants/theme';
+import { Radii, Shadow, Spacing, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 interface ActionTileProps {
@@ -24,7 +24,8 @@ export function ActionTile({ icon, title, subtitle, tone = 'brand', onPress }: A
       onPress={onPress}
       style={({ pressed }) => [
         styles.tile,
-        { backgroundColor: theme.card, borderColor: theme.border, opacity: pressed ? 0.85 : 1 },
+        Shadow.card,
+        { backgroundColor: theme.card, borderColor: theme.cardBorder, opacity: pressed ? 0.85 : 1 },
       ]}>
       <View style={[styles.icon, { backgroundColor: theme[subtleKey] }]}>
         <Ionicons name={icon} size={22} color={theme[tone]} />

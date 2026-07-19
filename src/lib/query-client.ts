@@ -34,6 +34,7 @@ export const queryKeys = {
   statement: ['statement'] as const,
   timeline: ['timeline'] as const,
   backups: ['backups'] as const,
+  archived: ['archived'] as const,
 } as const;
 
 /** Query keys that any money movement can affect — invalidate together after writes. */

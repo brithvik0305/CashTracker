@@ -49,7 +49,14 @@ export function describeTransaction(t: TransactionListItem): TransactionDisplay 
     case 'transfer':
       return { ...base, title: 'Transfer', tone: 'neutral', icon: 'swap-horizontal-outline' };
     case 'adjustment':
-      return { ...base, title: 'Balance adjustment', tone: 'neutral', icon: 'options-outline' };
+      // A card correction carries no bank account, so name the card instead.
+      return {
+        amount: t.amount,
+        subtitle: t.account_name ?? t.card_name,
+        title: t.card_name ? 'Card adjustment' : 'Balance adjustment',
+        tone: 'neutral',
+        icon: 'options-outline',
+      };
     default:
       return { ...base, title: 'Transaction', tone: 'neutral', icon: 'ellipse-outline' };
   }

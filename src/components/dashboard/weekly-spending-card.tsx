@@ -8,7 +8,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ProgressBar } from '@/components/ui/progress-bar';
-import { Radii, Spacing, type ThemeColor } from '@/constants/theme';
+import { Radii, Shadow, Spacing, type ThemeColor } from '@/constants/theme';
 import { formatMoney } from '@/domain/money';
 import type { SpendingTier } from '@/domain/spending-indicator';
 import { useWeeklySummary } from '@/hooks/use-weekly-summary';
@@ -37,7 +37,7 @@ export function WeeklySpendingCard() {
   const color = status ? theme[TIER_COLOR[status.tier]] : theme.textTertiary;
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <View style={[styles.card, Shadow.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
       <View style={styles.header}>
         <ThemedText type="smallBold" themeColor="textSecondary">
           WEEKLY SPENDING

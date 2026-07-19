@@ -9,6 +9,8 @@
  */
 
 import { getDb } from '@/db';
+import { todayISODate } from '@/lib/date';
+import { createTransaction } from '@/repositories/transactions-repository';
 import {
   CreditCardWithBalancesSchema,
   type CreditCardWithBalances,
@@ -86,6 +88,28 @@ export async function recordStatement(id: number, input: StatementInput): Promis
      WHERE id = ?`,
     [input.statement_amount, input.statement_date, input.due_date, id],
   );
+}
+
+/**
+ * Correct a card's outstanding balance to an exact figure by recording the
+ * difference as an adjustment. The entry carries no bank account, so it moves
+ * the card balance without pretending money left an account.
+ */
+export async function setCardOutstanding(id: number, targetPaise: number): Promise<void> {
+  const card = (await listCreditCards(true)).find((c) => c.id === id);
+  if (!card) throw new Error('Card not found.');
+
+  const delta = targetPaise - card.current_outstanding;
+  if (delta === 0) return;
+
+  await createTransaction({
+    type: 'adjustment',
+    amount: delta,
+    credit_card_id: id,
+    account_id: null,
+    date: todayISODate(),
+    notes: 'Manual outstanding adjustment',
+  });
 }
 
 export async function archiveCreditCard(id: number): Promise<void> {

@@ -22,6 +22,7 @@ import {
   useUpdateInvestment,
   useWithdrawInvestment,
 } from '@/hooks/use-investments';
+import { useDeleteRecordFlow } from '@/hooks/use-records';
 import { toISODate } from '@/lib/date';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -48,6 +49,7 @@ function Content({
   const withdraw = useWithdrawInvestment();
   const update = useUpdateInvestment();
   const archive = useArchiveInvestment();
+  const { confirmDelete, isPending: deleting } = useDeleteRecordFlow();
 
   const [name, setName] = useState(investment.name);
   const [type, setType] = useState<InvestmentType>(investment.type);
@@ -184,9 +186,15 @@ function Content({
 
       <Button
         title="Archive investment"
-        variant="danger"
+        variant="secondary"
         onPress={confirmArchive}
         loading={archive.isPending}
+      />
+      <Button
+        title="Delete investment permanently"
+        variant="danger"
+        onPress={() => confirmDelete('investment', investment.id, investment.name, onClose)}
+        loading={deleting}
       />
     </View>
   );

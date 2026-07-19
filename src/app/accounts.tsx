@@ -13,7 +13,7 @@ import { TransferModal } from '@/components/accounts/transfer-modal';
 import { AddCardModal } from '@/components/cards/add-card-modal';
 import { CardDetailModal } from '@/components/cards/card-detail-modal';
 import { CreditCardCard } from '@/components/cards/credit-card-card';
-import { ComingSoon } from '@/components/coming-soon';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Screen } from '@/components/screen';
 import { StatCard } from '@/components/stat-card';
 import { ThemedText } from '@/components/themed-text';
@@ -67,10 +67,12 @@ export default function AccountsScreen() {
           </View>
 
           {accountList.length === 0 ? (
-            <ComingSoon
+            <EmptyState
               icon="wallet-outline"
-              milestone="No accounts yet"
-              description="Add your SBI and Canara accounts to start tracking your cash. Balances update automatically from every transaction."
+              title="No accounts yet"
+              description="Add your bank accounts to start tracking cash. Balances update automatically from every transaction."
+              actionLabel="Add your first account"
+              onAction={() => setShowAddAccount(true)}
             />
           ) : (
             <View style={styles.list}>

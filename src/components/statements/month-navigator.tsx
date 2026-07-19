@@ -5,7 +5,7 @@ import { addMonths, format, isSameMonth } from 'date-fns';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radii, Spacing } from '@/constants/theme';
+import { Radii, Shadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export function MonthNavigator({
@@ -19,7 +19,8 @@ export function MonthNavigator({
   const atCurrentMonth = isSameMonth(month, new Date());
 
   return (
-    <View style={[styles.wrap, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <View
+      style={[styles.wrap, Shadow.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
       <Pressable
         onPress={() => onChange(addMonths(month, -1))}
         hitSlop={8}

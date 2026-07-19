@@ -13,7 +13,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { initDatabase } from '@/db';
+import { getSettings } from '@/repositories/settings-repository';
 import { maybeAutoBackup } from '@/services/backup-service';
+import { useUiStore } from '@/store/ui-store';
 import { useTheme } from '@/hooks/use-theme';
 
 type Status = { state: 'loading' } | { state: 'ready' } | { state: 'error'; message: string };
@@ -27,6 +29,16 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         await initDatabase();
+
+        // Apply the saved theme before the UI paints, so there is no flash of
+        // the wrong scheme.
+        try {
+          const settings = await getSettings();
+          useUiStore.getState().hydrateThemeMode(settings.theme);
+        } catch (err) {
+          console.warn('Could not load theme preference', err);
+        }
+
         if (!cancelled) setStatus({ state: 'ready' });
         // Daily automatic backup, in the background. Never blocks startup, and a
         // failure here must not stop the app from opening.

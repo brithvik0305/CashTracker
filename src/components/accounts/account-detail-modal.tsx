@@ -14,6 +14,7 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { useArchiveAccount, useSetBalance, useUpdateAccount } from '@/hooks/use-accounts';
+import { useDeleteRecordFlow } from '@/hooks/use-records';
 import { formatMoney } from '@/domain/money';
 import { useTheme } from '@/hooks/use-theme';
 import type { AccountType, AccountWithBalance } from '@/schemas/account';
@@ -32,6 +33,7 @@ export function AccountDetailModal({ account, onClose }: Props) {
   const update = useUpdateAccount();
   const setBalance = useSetBalance();
   const archive = useArchiveAccount();
+  const { confirmDelete, isPending: deleting } = useDeleteRecordFlow();
 
   useEffect(() => {
     if (account) {
@@ -114,9 +116,15 @@ export function AccountDetailModal({ account, onClose }: Props) {
 
       <Button
         title="Archive account"
-        variant="danger"
+        variant="secondary"
         onPress={confirmArchive}
         loading={archive.isPending}
+      />
+      <Button
+        title="Delete account permanently"
+        variant="danger"
+        onPress={() => confirmDelete('account', account.id, account.name, onClose)}
+        loading={deleting}
       />
     </AppModal>
   );

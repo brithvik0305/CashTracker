@@ -14,7 +14,13 @@ import { MoneyInput } from '@/components/ui/money-input';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { formatMoney } from '@/domain/money';
-import { useArchiveCard, useRecordStatement, useUpdateCard } from '@/hooks/use-credit-cards';
+import {
+  useArchiveCard,
+  useRecordStatement,
+  useSetCardOutstanding,
+  useUpdateCard,
+} from '@/hooks/use-credit-cards';
+import { useDeleteRecordFlow } from '@/hooks/use-records';
 import { toISODate } from '@/lib/date';
 import { useTheme } from '@/hooks/use-theme';
 import type { CreditCardWithBalances } from '@/schemas/credit-card';
@@ -32,10 +38,13 @@ export function CardDetailModal({
   const [stmtPaise, setStmtPaise] = useState<number | null>(null);
   const [stmtDate, setStmtDate] = useState(new Date());
   const [dueDate, setDueDate] = useState(new Date());
+  const [outstandingPaise, setOutstandingPaise] = useState<number | null>(null);
 
   const update = useUpdateCard();
   const record = useRecordStatement();
+  const setOutstanding = useSetCardOutstanding();
   const archive = useArchiveCard();
+  const { confirmDelete, isPending: deleting } = useDeleteRecordFlow();
 
   useEffect(() => {
     if (card) {
@@ -44,6 +53,7 @@ export function CardDetailModal({
       setStmtPaise(null);
       setStmtDate(card.statement_date ? new Date(`${card.statement_date}T00:00:00`) : new Date());
       setDueDate(card.due_date ? new Date(`${card.due_date}T00:00:00`) : new Date());
+      setOutstandingPaise(null);
     }
   }, [card]);
 
@@ -55,6 +65,12 @@ export function CardDetailModal({
       id: card.id,
       edit: { name, credit_limit: limitPaise ?? 0 },
     });
+    onClose();
+  };
+
+  const applyOutstanding = async () => {
+    if (outstandingPaise == null) return;
+    await setOutstanding.mutateAsync({ id: card.id, target: outstandingPaise });
     onClose();
   };
 
@@ -104,6 +120,24 @@ export function CardDetailModal({
       <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
       <ThemedText type="smallBold" themeColor="textSecondary">
+        CORRECT THE OUTSTANDING
+      </ThemedText>
+      <MoneyInput
+        label="Set outstanding to"
+        hint="Records the difference as an adjustment on this card."
+        onChangePaise={setOutstandingPaise}
+      />
+      <Button
+        title="Set outstanding"
+        variant="secondary"
+        onPress={applyOutstanding}
+        loading={setOutstanding.isPending}
+        disabled={outstandingPaise == null}
+      />
+
+      <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+      <ThemedText type="smallBold" themeColor="textSecondary">
         RECORD A STATEMENT
       </ThemedText>
       <MoneyInput label="Statement amount" onChangePaise={setStmtPaise} />
@@ -121,9 +155,15 @@ export function CardDetailModal({
 
       <Button
         title="Archive card"
-        variant="danger"
+        variant="secondary"
         onPress={confirmArchive}
         loading={archive.isPending}
+      />
+      <Button
+        title="Delete card permanently"
+        variant="danger"
+        onPress={() => confirmDelete('card', card.id, card.name, onClose)}
+        loading={deleting}
       />
     </AppModal>
   );

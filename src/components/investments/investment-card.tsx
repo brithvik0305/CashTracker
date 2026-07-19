@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radii, Spacing } from '@/constants/theme';
+import { Radii, Shadow, Spacing } from '@/constants/theme';
 import { formatMoney } from '@/domain/money';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -37,7 +37,8 @@ export function InvestmentCard({
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
-        { backgroundColor: theme.card, borderColor: theme.border, opacity: pressed ? 0.85 : 1 },
+        Shadow.card,
+        { backgroundColor: theme.card, borderColor: theme.cardBorder, opacity: pressed ? 0.85 : 1 },
       ]}>
       <View style={[styles.icon, { backgroundColor: theme.brandSubtle }]}>
         <Ionicons name={ICONS[investment.type] as never} size={20} color={theme.brand} />

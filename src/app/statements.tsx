@@ -16,7 +16,7 @@ import { ThemedText } from '@/components/themed-text';
 import { TransactionDetailModal } from '@/components/transactions/transaction-detail-modal';
 import { TransactionRow } from '@/components/transactions/transaction-row';
 import { ChipSelect } from '@/components/ui/chip-select';
-import { Radii, Spacing, type ThemeColor } from '@/constants/theme';
+import { Radii, Shadow, Spacing, type ThemeColor } from '@/constants/theme';
 import { formatMoney } from '@/domain/money';
 import { useMonthlyStatement } from '@/hooks/use-monthly-statement';
 import { useTimeline } from '@/hooks/use-timeline';
@@ -36,7 +36,8 @@ const FILTERS: { label: string; value: number; types: TransactionType[] | null }
 function Card({ title, children }: { title?: string; children: React.ReactNode }) {
   const theme = useTheme();
   return (
-    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <View
+      style={[styles.card, Shadow.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
       {title ? (
         <ThemedText type="smallBold" themeColor="textSecondary">
           {title}

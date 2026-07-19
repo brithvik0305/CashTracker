@@ -1,13 +1,11 @@
 /**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
+ * The active colour palette, honouring the user's theme preference.
+ * See use-resolved-scheme for how 'system' is resolved.
  */
 
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useResolvedScheme } from '@/hooks/use-resolved-scheme';
 
 export function useTheme() {
-  const scheme = useColorScheme();
-
-  return Colors[scheme ?? 'light'];
+  return Colors[useResolvedScheme()];
 }

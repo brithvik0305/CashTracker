@@ -1,34 +1,45 @@
 /**
- * ComingSoon — placeholder body for screens whose features arrive in a later
- * milestone. Keeps the app navigable and honest about what is not built yet.
+ * Empty state with an optional call to action. Replaces the placeholder card
+ * that stood in for this during earlier milestones.
  */
 
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radii, Spacing } from '@/constants/theme';
+import { Button } from '@/components/ui/button';
+import { Radii, Shadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-interface ComingSoonProps {
+interface EmptyStateProps {
   icon: React.ComponentProps<typeof Ionicons>['name'];
-  milestone: string;
+  title: string;
   description: string;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
-export function ComingSoon({ icon, milestone, description }: ComingSoonProps) {
+export function EmptyState({
+  icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+}: EmptyStateProps) {
   const theme = useTheme();
+
   return (
-    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-      <View style={[styles.iconWrap, { backgroundColor: theme.brandSubtle }]}>
+    <View style={[styles.card, Shadow.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+      <View style={[styles.icon, { backgroundColor: theme.brandSubtle }]}>
         <Ionicons name={icon} size={22} color={theme.brand} />
       </View>
-      <ThemedText type="smallBold" themeColor="textSecondary">
-        {milestone}
-      </ThemedText>
+      <ThemedText type="smallBold">{title}</ThemedText>
       <ThemedText type="small" themeColor="textTertiary" style={styles.description}>
         {description}
       </ThemedText>
+      {actionLabel && onAction ? (
+        <Button title={actionLabel} onPress={onAction} style={styles.action} />
+      ) : null}
     </View>
   );
 }
@@ -41,7 +52,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
   },
-  iconWrap: {
+  icon: {
     width: 48,
     height: 48,
     borderRadius: Radii.pill,
@@ -51,5 +62,9 @@ const styles = StyleSheet.create({
   },
   description: {
     textAlign: 'center',
+  },
+  action: {
+    marginTop: Spacing.two,
+    alignSelf: 'stretch',
   },
 });

@@ -17,6 +17,7 @@ import { Spacing } from '@/constants/theme';
 import { formatMoney } from '@/domain/money';
 import { useAccounts } from '@/hooks/use-accounts';
 import { useAddLoanPayment, useArchiveLoan, useUpdateLoan } from '@/hooks/use-loans';
+import { useDeleteRecordFlow } from '@/hooks/use-records';
 import { toISODate } from '@/lib/date';
 import { useTheme } from '@/hooks/use-theme';
 import type { LoanKind, LoanWithTotals } from '@/schemas/loan';
@@ -41,6 +42,7 @@ function Content({
   const pay = useAddLoanPayment(kind);
   const update = useUpdateLoan(kind);
   const archive = useArchiveLoan(kind);
+  const { confirmDelete, isPending: deleting } = useDeleteRecordFlow();
 
   const [person, setPerson] = useState(loan.person);
   const [notes, setNotes] = useState(loan.notes ?? '');
@@ -142,9 +144,15 @@ function Content({
 
       <Button
         title="Archive record"
-        variant="danger"
+        variant="secondary"
         onPress={confirmArchive}
         loading={archive.isPending}
+      />
+      <Button
+        title="Delete record permanently"
+        variant="danger"
+        onPress={() => confirmDelete(kind, loan.id, loan.person, onClose)}
+        loading={deleting}
       />
     </View>
   );

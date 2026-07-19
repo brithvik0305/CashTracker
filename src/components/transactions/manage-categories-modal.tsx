@@ -15,6 +15,7 @@ import {
   useCreateCategory,
   useRenameCategory,
 } from '@/hooks/use-categories';
+import { useDeleteRecordFlow } from '@/hooks/use-records';
 import { useTheme } from '@/hooks/use-theme';
 import type { Category } from '@/schemas/category';
 
@@ -23,6 +24,7 @@ function CategoryEditRow({ category }: { category: Category }) {
   const [name, setName] = useState(category.name);
   const rename = useRenameCategory();
   const archive = useArchiveCategory();
+  const { confirmDelete } = useDeleteRecordFlow();
 
   const commit = () => {
     const trimmed = name.trim();
@@ -38,7 +40,18 @@ function CategoryEditRow({ category }: { category: Category }) {
       <View style={styles.grow}>
         <TextField value={name} onChangeText={setName} onEndEditing={commit} />
       </View>
-      <Pressable onPress={() => archive.mutate(category.id)} hitSlop={10} style={styles.trash}>
+      <Pressable
+        onPress={() => archive.mutate(category.id)}
+        hitSlop={10}
+        style={styles.trash}
+        accessibilityLabel={`Archive ${category.name}`}>
+        <Ionicons name="archive-outline" size={20} color={theme.textSecondary} />
+      </Pressable>
+      <Pressable
+        onPress={() => confirmDelete('category', category.id, category.name)}
+        hitSlop={10}
+        style={styles.trash}
+        accessibilityLabel={`Delete ${category.name}`}>
         <Ionicons name="trash-outline" size={20} color={theme.danger} />
       </Pressable>
     </View>

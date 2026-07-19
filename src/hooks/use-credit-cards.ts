@@ -9,6 +9,7 @@ import {
   createCreditCard,
   listCreditCards,
   recordStatement,
+  setCardOutstanding,
   updateCreditCard,
   type CreditCardEdit,
   type NewCreditCard,
@@ -48,6 +49,14 @@ export function useRecordStatement() {
   const invalidate = useInvalidateMoney();
   return useMutation({
     mutationFn: ({ id, input }: { id: number; input: StatementInput }) => recordStatement(id, input),
+    onSuccess: invalidate,
+  });
+}
+
+export function useSetCardOutstanding() {
+  const invalidate = useInvalidateMoney();
+  return useMutation({
+    mutationFn: ({ id, target }: { id: number; target: number }) => setCardOutstanding(id, target),
     onSuccess: invalidate,
   });
 }

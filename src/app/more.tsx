@@ -6,8 +6,9 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { ComingSoon } from '@/components/coming-soon';
+import { ArchivedModal } from '@/components/data/archived-modal';
 import { BackupsModal } from '@/components/data/backups-modal';
+import { SettingsModal } from '@/components/data/settings-modal';
 import { AddInvestmentModal } from '@/components/investments/add-investment-modal';
 import { InvestmentCard } from '@/components/investments/investment-card';
 import { InvestmentDetailModal } from '@/components/investments/investment-detail-modal';
@@ -36,6 +37,8 @@ export default function MoreScreen() {
   const [showAddInvestment, setShowAddInvestment] = useState(false);
   const [investmentDetail, setInvestmentDetail] = useState<InvestmentWithTotals | null>(null);
   const [showBackups, setShowBackups] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const lendingList = lendings ?? [];
   const borrowingList = borrowings ?? [];
@@ -105,13 +108,21 @@ export default function MoreScreen() {
           subtitle="Export CSV/JSON, back up, and restore"
           onPress={() => setShowBackups(true)}
         />
+        <ActionTile
+          icon="arrow-undo-outline"
+          tone="brand"
+          title="Archived items"
+          subtitle="Restore or permanently delete"
+          onPress={() => setShowArchived(true)}
+        />
+        <ActionTile
+          icon="settings-outline"
+          tone="brand"
+          title="Settings"
+          subtitle="Appearance and app details"
+          onPress={() => setShowSettings(true)}
+        />
       </View>
-
-      <ComingSoon
-        icon="ellipsis-horizontal"
-        milestone="Still to come"
-        description="Search and app settings arrive in a later milestone."
-      />
 
       <AddLoanModal
         kind={addKind ?? 'lending'}
@@ -132,6 +143,8 @@ export default function MoreScreen() {
         onClose={() => setInvestmentDetail(null)}
       />
       <BackupsModal visible={showBackups} onClose={() => setShowBackups(false)} />
+      <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
+      <ArchivedModal visible={showArchived} onClose={() => setShowArchived(false)} />
     </Screen>
   );
 }

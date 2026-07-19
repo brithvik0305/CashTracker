@@ -23,13 +23,16 @@ export const Colors = {
     textTertiary: '#8A8F98',
     textInverse: '#FFFFFF',
 
-    // Surfaces
-    background: '#F6F7F9',
+    // Surfaces — clean white cards lifted by a soft shadow, over a barely
+    // tinted canvas. `cardBorder` matches the card fill so cards stay
+    // borderless; `border` is still used for dividers and input outlines.
+    background: '#F7F8FA',
     card: '#FFFFFF',
     backgroundElement: '#FFFFFF',
-    backgroundSelected: '#ECEDF1',
+    backgroundSelected: '#ECEEF2',
     border: '#E6E8EC',
     borderStrong: '#D3D6DC',
+    cardBorder: '#FFFFFF',
 
     // Brand / accent
     brand: '#3B6EF5',
@@ -54,13 +57,14 @@ export const Colors = {
     textTertiary: '#6E747E',
     textInverse: '#0B0C0E',
 
-    // Surfaces
+    // Surfaces — same idea inverted: near-black canvas, cards lifted a step.
     background: '#0B0C0E',
-    card: '#16181C',
-    backgroundElement: '#16181C',
-    backgroundSelected: '#23262C',
-    border: '#23262C',
-    borderStrong: '#31353C',
+    card: '#1A1D22',
+    backgroundElement: '#1A1D22',
+    backgroundSelected: '#272B32',
+    border: '#272B32',
+    borderStrong: '#363B43',
+    cardBorder: '#1A1D22',
 
     // Brand / accent
     brand: '#5B87FF',
@@ -117,6 +121,46 @@ export const Spacing = {
   five: 32,
   six: 64,
 } as const;
+
+/**
+ * Elevation.
+ *
+ * Cards get a gentle lift off the canvas; the Safe To Spend hero sits higher so
+ * it stays the focal point. On Android the shadow comes entirely from
+ * `elevation` — the shadow* properties only apply on iOS.
+ */
+export const Shadow = {
+  card: {
+    shadowColor: '#0B0C0E',
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  raised: {
+    shadowColor: '#0B0C0E',
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+} as const;
+
+/** Distinct colours for categories, so charts and chips are not all one hue. */
+export const CategoryPalette = [
+  '#3B6EF5',
+  '#12A594',
+  '#D9691A',
+  '#8B5CF6',
+  '#E5484D',
+  '#0EA5E9',
+  '#B07A00',
+  '#EC4899',
+] as const;
+
+export function categoryColorAt(index: number): string {
+  return CategoryPalette[index % CategoryPalette.length];
+}
 
 /** Corner radii for cards, chips, and pills. */
 export const Radii = {
