@@ -23,6 +23,8 @@ export interface NewTransaction {
   account_id?: number | null;
   category_id?: number | null;
   credit_card_id?: number | null;
+  lending_id?: number | null;
+  borrowing_id?: number | null;
   counterparty?: string | null;
   transfer_group_id?: string | null;
   date: string; // 'YYYY-MM-DD'
@@ -33,14 +35,17 @@ export async function createTransaction(tx: NewTransaction): Promise<number> {
   const db = await getDb();
   const result = await db.runAsync(
     `INSERT INTO transactions
-       (type, amount, account_id, category_id, credit_card_id, counterparty, transfer_group_id, date, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (type, amount, account_id, category_id, credit_card_id, lending_id, borrowing_id,
+        counterparty, transfer_group_id, date, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       tx.type,
       tx.amount,
       tx.account_id ?? null,
       tx.category_id ?? null,
       tx.credit_card_id ?? null,
+      tx.lending_id ?? null,
+      tx.borrowing_id ?? null,
       tx.counterparty ?? null,
       tx.transfer_group_id ?? null,
       tx.date,
@@ -279,6 +284,23 @@ export async function editTransaction(item: TransactionListItem, v: EditValues):
       await db.runAsync(
         `UPDATE transactions SET amount = ?, date = ?, notes = ?, ${TOUCH} WHERE id = ?`,
         [(v.direction ?? 1) * v.amount, v.date, v.notes, item.id],
+      );
+      return;
+    // Loan rows keep their lending_id / borrowing_id link; only the money moves.
+    case 'lend':
+    case 'borrow_repay':
+      await db.runAsync(
+        `UPDATE transactions SET amount = ?, account_id = ?, counterparty = ?, date = ?,
+           notes = ?, ${TOUCH} WHERE id = ?`,
+        [-v.amount, v.accountId ?? null, v.client ?? item.counterparty, v.date, v.notes, item.id],
+      );
+      return;
+    case 'borrow':
+    case 'lend_return':
+      await db.runAsync(
+        `UPDATE transactions SET amount = ?, account_id = ?, counterparty = ?, date = ?,
+           notes = ?, ${TOUCH} WHERE id = ?`,
+        [v.amount, v.accountId ?? null, v.client ?? item.counterparty, v.date, v.notes, item.id],
       );
       return;
     case 'transfer': {

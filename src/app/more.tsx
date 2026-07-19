@@ -1,14 +1,132 @@
+/**
+ * More tab — money lent and money borrowed, with partial repayments.
+ * Investments, search, export, and settings arrive in later milestones.
+ */
+
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+
 import { ComingSoon } from '@/components/coming-soon';
+import { AddLoanModal } from '@/components/loans/add-loan-modal';
+import { LoanCard } from '@/components/loans/loan-card';
+import { LoanDetailModal } from '@/components/loans/loan-detail-modal';
 import { Screen } from '@/components/screen';
+import { StatCard } from '@/components/stat-card';
+import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/button';
+import { Spacing } from '@/constants/theme';
+import { formatMoney } from '@/domain/money';
+import { useLoans } from '@/hooks/use-loans';
+import type { LoanKind, LoanWithTotals } from '@/schemas/loan';
 
 export default function MoreScreen() {
+  const { data: lendings } = useLoans('lending');
+  const { data: borrowings } = useLoans('borrowing');
+
+  const [addKind, setAddKind] = useState<LoanKind | null>(null);
+  const [detail, setDetail] = useState<{ loan: LoanWithTotals; kind: LoanKind } | null>(null);
+
+  const lendingList = lendings ?? [];
+  const borrowingList = borrowings ?? [];
+  const owedToMe = lendingList.reduce((s, l) => s + Math.max(l.remaining, 0), 0);
+  const iOwe = borrowingList.reduce((s, l) => s + Math.max(l.remaining, 0), 0);
+
   return (
-    <Screen title="More" subtitle="Lending, borrowing, investments & settings">
+    <Screen title="More" subtitle="Lending & borrowing">
+      <View style={styles.row}>
+        <StatCard label="Owed to me" value={formatMoney(owedToMe)} tone="success" />
+        <StatCard label="I owe" value={formatMoney(iOwe)} tone="danger" />
+      </View>
+
+      <Section
+        title="MONEY I LENT"
+        actionLabel="Lend"
+        onAction={() => setAddKind('lending')}
+        empty="Nobody owes you right now."
+        loans={lendingList}
+        kind="lending"
+        onSelect={(loan) => setDetail({ loan, kind: 'lending' })}
+      />
+
+      <Section
+        title="MONEY I BORROWED"
+        actionLabel="Borrow"
+        onAction={() => setAddKind('borrowing')}
+        empty="You haven't borrowed anything."
+        loans={borrowingList}
+        kind="borrowing"
+        onSelect={(loan) => setDetail({ loan, kind: 'borrowing' })}
+      />
+
       <ComingSoon
         icon="ellipsis-horizontal"
-        milestone="Arrives in Milestones 5, 6 & 10"
-        description="Money lent and borrowed with partial repayments, investment tracking, search, export (CSV/JSON), backups, and app settings."
+        milestone="Still to come"
+        description="Investments, search, CSV/JSON export, backups, and settings arrive in the next milestones."
+      />
+
+      <AddLoanModal
+        kind={addKind ?? 'lending'}
+        visible={addKind !== null}
+        onClose={() => setAddKind(null)}
+      />
+      <LoanDetailModal
+        loan={detail?.loan ?? null}
+        kind={detail?.kind ?? 'lending'}
+        onClose={() => setDetail(null)}
       />
     </Screen>
   );
 }
+
+function Section({
+  title,
+  actionLabel,
+  onAction,
+  empty,
+  loans,
+  kind,
+  onSelect,
+}: {
+  title: string;
+  actionLabel: string;
+  onAction: () => void;
+  empty: string;
+  loans: LoanWithTotals[];
+  kind: LoanKind;
+  onSelect: (loan: LoanWithTotals) => void;
+}) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <ThemedText type="smallBold" themeColor="textSecondary">
+          {title}
+        </ThemedText>
+        <Button title={actionLabel} variant="ghost" onPress={onAction} />
+      </View>
+      {loans.length === 0 ? (
+        <ThemedText type="small" themeColor="textTertiary">
+          {empty}
+        </ThemedText>
+      ) : (
+        loans.map((loan) => (
+          <LoanCard key={loan.id} loan={loan} kind={kind} onPress={() => onSelect(loan)} />
+        ))
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+  },
+  section: {
+    gap: Spacing.two,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+});

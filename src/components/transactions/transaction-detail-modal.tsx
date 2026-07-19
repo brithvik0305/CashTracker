@@ -32,6 +32,21 @@ const EDITABLE = new Set([
   'cc_payment',
   'transfer',
   'adjustment',
+  'lend',
+  'lend_return',
+  'borrow',
+  'borrow_repay',
+]);
+
+/** Types that move money through a bank account and so let you pick one. */
+const HAS_ACCOUNT = new Set([
+  'income',
+  'expense',
+  'cc_payment',
+  'lend',
+  'lend_return',
+  'borrow',
+  'borrow_repay',
 ]);
 
 function DetailContent({ item, onClose }: { item: TransactionListItem; onClose: () => void }) {
@@ -133,15 +148,14 @@ function DetailContent({ item, onClose }: { item: TransactionListItem; onClose: 
         <SegmentedControl label="Card" value={cardId ?? cardOptions[0].value} onChange={setCardId} options={cardOptions} />
       )}
 
-      {(type === 'income' || type === 'expense' || type === 'cc_payment') &&
-        accountOptions.length > 0 && (
-          <SegmentedControl
-            label="Account"
-            value={accountId ?? accountOptions[0].value}
-            onChange={setAccountId}
-            options={accountOptions}
-          />
-        )}
+      {HAS_ACCOUNT.has(type) && accountOptions.length > 0 && (
+        <SegmentedControl
+          label="Account"
+          value={accountId ?? accountOptions[0].value}
+          onChange={setAccountId}
+          options={accountOptions}
+        />
+      )}
 
       {(type === 'expense' || type === 'cc_purchase') && categoryOptions.length > 0 && (
         <ChipSelect label="Category" value={categoryId} onChange={setCategoryId} options={categoryOptions} />
@@ -149,6 +163,10 @@ function DetailContent({ item, onClose }: { item: TransactionListItem; onClose: 
 
       {type === 'income' && (
         <TextField label="Client (optional)" value={client} onChangeText={setClient} />
+      )}
+
+      {(type === 'lend' || type === 'borrow') && (
+        <TextField label="Person" value={client} onChangeText={setClient} />
       )}
 
       <DateField label="Date" value={date} onChange={setDate} />

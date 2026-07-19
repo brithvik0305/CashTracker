@@ -40,7 +40,8 @@ function Card({ children }: { children: React.ReactNode }) {
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const { totalCash, safeToSpend, netAvailable, cardOutstanding } = useFinancialPosition();
+  const { totalCash, safeToSpend, netAvailable, cardOutstanding, owedToMe, iOwe } =
+    useFinancialPosition();
   const { data: income } = useIncomeSummary();
   const { data: cards } = useCreditCards();
   const { data: recent } = useRecentTransactions(6);
@@ -100,6 +101,13 @@ export default function HomeScreen() {
               : 'No statements due right now.'}
           </ThemedText>
         </Card>
+      )}
+
+      {(owedToMe > 0 || iOwe > 0) && (
+        <View style={styles.row}>
+          <StatCard label="Owed to me" value={formatMoney(owedToMe)} tone="success" />
+          <StatCard label="I owe" value={formatMoney(iOwe)} tone="danger" />
+        </View>
       )}
 
       <Card>

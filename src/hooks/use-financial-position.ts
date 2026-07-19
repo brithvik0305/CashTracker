@@ -1,16 +1,17 @@
 /**
  * Derives the dashboard's headline figures from current data.
  *
- * Cash comes from accounts; unpaid billed card statements come from credit cards
- * and are what Safe To Spend / Net Available subtract. Money owed to/by you
- * (lending, borrowing) is still 0 until those milestones land. The formulas are
- * additive, so wiring the remaining components in later requires no change here.
+ * As of M5 every component of the Safe To Spend formula is live:
+ *   cash (accounts) + owed to you (lending) − you owe (borrowing)
+ *   − unpaid billed card statements
+ * Investments stay excluded (locked) when they arrive in M6.
  */
 
 import { useMemo } from 'react';
 
 import { useAccounts } from '@/hooks/use-accounts';
 import { useCreditCards } from '@/hooks/use-credit-cards';
+import { useLoans } from '@/hooks/use-loans';
 import {
   computeNetAvailableBalance,
   computeSafeToSpend,
@@ -21,6 +22,8 @@ export interface DashboardFigures {
   position: FinancialPosition;
   totalCash: number;
   cardOutstanding: number;
+  owedToMe: number;
+  iOwe: number;
   safeToSpend: number;
   netAvailable: number;
   isLoading: boolean;
@@ -29,6 +32,8 @@ export interface DashboardFigures {
 export function useFinancialPosition(): DashboardFigures {
   const { data: accounts, isLoading: accountsLoading } = useAccounts();
   const { data: cards, isLoading: cardsLoading } = useCreditCards();
+  const { data: lendings } = useLoans('lending');
+  const { data: borrowings } = useLoans('borrowing');
 
   return useMemo(() => {
     const totalCash = (accounts ?? []).reduce((sum, a) => sum + a.current_balance, 0);
@@ -37,19 +42,24 @@ export function useFinancialPosition(): DashboardFigures {
       (sum, c) => sum + c.statement_outstanding,
       0,
     );
+    const owedToMe = (lendings ?? []).reduce((sum, l) => sum + Math.max(l.remaining, 0), 0);
+    const iOwe = (borrowings ?? []).reduce((sum, l) => sum + Math.max(l.remaining, 0), 0);
+
     const position: FinancialPosition = {
       totalCash,
-      owedToMe: 0,
-      iOwe: 0,
+      owedToMe,
+      iOwe,
       ccStatementsOutstanding,
     };
     return {
       position,
       totalCash,
       cardOutstanding,
+      owedToMe,
+      iOwe,
       safeToSpend: computeSafeToSpend(position),
       netAvailable: computeNetAvailableBalance(position),
       isLoading: accountsLoading || cardsLoading,
     };
-  }, [accounts, cards, accountsLoading, cardsLoading]);
+  }, [accounts, cards, lendings, borrowings, accountsLoading, cardsLoading]);
 }

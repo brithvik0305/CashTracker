@@ -132,4 +132,36 @@ export const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_transactions_card ON transactions(credit_card_id);
     `,
   },
+  {
+    version: 5,
+    name: 'lending_and_borrowing',
+    up: `
+      -- Loan records hold only metadata (who + notes). Principal, repaid, and
+      -- remaining amounts are derived from the linked ledger rows, so editing or
+      -- deleting a transaction keeps the figures correct.
+      CREATE TABLE IF NOT EXISTS lendings (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        person      TEXT    NOT NULL,
+        notes       TEXT,
+        is_archived INTEGER NOT NULL DEFAULT 0 CHECK (is_archived IN (0, 1)),
+        created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+        updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS borrowings (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        person      TEXT    NOT NULL,
+        notes       TEXT,
+        is_archived INTEGER NOT NULL DEFAULT 0 CHECK (is_archived IN (0, 1)),
+        created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+        updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+
+      ALTER TABLE transactions ADD COLUMN lending_id   INTEGER REFERENCES lendings(id);
+      ALTER TABLE transactions ADD COLUMN borrowing_id INTEGER REFERENCES borrowings(id);
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_lending   ON transactions(lending_id);
+      CREATE INDEX IF NOT EXISTS idx_transactions_borrowing ON transactions(borrowing_id);
+    `,
+  },
 ];

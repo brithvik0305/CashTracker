@@ -25,6 +25,8 @@ export const queryKeys = {
   accounts: ['accounts'] as const,
   categories: ['categories'] as const,
   creditCards: ['creditCards'] as const,
+  lendings: ['loans', 'lending'] as const,
+  borrowings: ['loans', 'borrowing'] as const,
   recentTransactions: ['transactions', 'recent'] as const,
   incomeSummary: ['summary', 'income'] as const,
   weeklySummary: ['summary', 'weekly'] as const,
@@ -34,6 +36,8 @@ export const queryKeys = {
 export const moneyQueryKeys = [
   queryKeys.accounts,
   queryKeys.creditCards,
+  queryKeys.lendings,
+  queryKeys.borrowings,
   queryKeys.recentTransactions,
   queryKeys.incomeSummary,
   queryKeys.weeklySummary,
