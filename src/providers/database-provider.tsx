@@ -13,6 +13,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { initDatabase } from '@/db';
+import { maybeAutoBackup } from '@/services/backup-service';
 import { useTheme } from '@/hooks/use-theme';
 
 type Status = { state: 'loading' } | { state: 'ready' } | { state: 'error'; message: string };
@@ -27,6 +28,11 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
       try {
         await initDatabase();
         if (!cancelled) setStatus({ state: 'ready' });
+        // Daily automatic backup, in the background. Never blocks startup, and a
+        // failure here must not stop the app from opening.
+        maybeAutoBackup().catch((err) =>
+          console.warn('Automatic backup failed', err),
+        );
       } catch (err) {
         if (!cancelled) {
           // Web is a preview-only target where SQLite may be unavailable. Degrade to a

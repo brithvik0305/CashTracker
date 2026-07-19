@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ComingSoon } from '@/components/coming-soon';
+import { BackupsModal } from '@/components/data/backups-modal';
 import { AddInvestmentModal } from '@/components/investments/add-investment-modal';
 import { InvestmentCard } from '@/components/investments/investment-card';
 import { InvestmentDetailModal } from '@/components/investments/investment-detail-modal';
@@ -16,6 +17,7 @@ import { LoanDetailModal } from '@/components/loans/loan-detail-modal';
 import { Screen } from '@/components/screen';
 import { StatCard } from '@/components/stat-card';
 import { ThemedText } from '@/components/themed-text';
+import { ActionTile } from '@/components/ui/action-tile';
 import { Button } from '@/components/ui/button';
 import { Spacing } from '@/constants/theme';
 import { formatMoney } from '@/domain/money';
@@ -33,6 +35,7 @@ export default function MoreScreen() {
   const [detail, setDetail] = useState<{ loan: LoanWithTotals; kind: LoanKind } | null>(null);
   const [showAddInvestment, setShowAddInvestment] = useState(false);
   const [investmentDetail, setInvestmentDetail] = useState<InvestmentWithTotals | null>(null);
+  const [showBackups, setShowBackups] = useState(false);
 
   const lendingList = lendings ?? [];
   const borrowingList = borrowings ?? [];
@@ -91,10 +94,23 @@ export default function MoreScreen() {
         )}
       </View>
 
+      <View style={styles.section}>
+        <ThemedText type="smallBold" themeColor="textSecondary">
+          DATA
+        </ThemedText>
+        <ActionTile
+          icon="archive-outline"
+          tone="brand"
+          title="Data & backups"
+          subtitle="Export CSV/JSON, back up, and restore"
+          onPress={() => setShowBackups(true)}
+        />
+      </View>
+
       <ComingSoon
         icon="ellipsis-horizontal"
         milestone="Still to come"
-        description="Search, CSV/JSON export, backups, and settings arrive in the next milestones."
+        description="Search and app settings arrive in a later milestone."
       />
 
       <AddLoanModal
@@ -115,6 +131,7 @@ export default function MoreScreen() {
         investment={investmentDetail}
         onClose={() => setInvestmentDetail(null)}
       />
+      <BackupsModal visible={showBackups} onClose={() => setShowBackups(false)} />
     </Screen>
   );
 }

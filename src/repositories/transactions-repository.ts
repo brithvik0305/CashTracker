@@ -169,6 +169,18 @@ export async function listRecentTransactions(limit = 8): Promise<TransactionList
   return rows.map((r) => TransactionListItemSchema.parse(r));
 }
 
+/**
+ * Every transaction ever recorded, oldest first, for CSV export. Unlike the
+ * timeline this keeps BOTH legs of a transfer so the export is a faithful dump.
+ */
+export async function listAllTransactionsForExport(): Promise<TransactionListItem[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<Record<string, unknown>>(
+    `${TIMELINE_SELECT} ORDER BY t.date ASC, t.created_at ASC`,
+  );
+  return rows.map((r) => TransactionListItemSchema.parse(r));
+}
+
 /** Every transaction within a date range, newest first (the statement timeline). */
 export async function listTransactionsInRange(
   startISO: string,
