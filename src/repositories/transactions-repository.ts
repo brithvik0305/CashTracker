@@ -145,24 +145,41 @@ export async function addCardPayment(input: CardPaymentInput): Promise<number> {
   });
 }
 
-/**
- * Recent ledger rows enriched with account/category/card names, most recent first.
- * Transfers appear once (the outgoing leg) rather than as two rows.
- */
+/** Enriched ledger select. Transfers appear once (the outgoing leg), not twice. */
+const TIMELINE_SELECT = `SELECT t.*, a.name AS account_name, c.name AS category_name,
+         cc.name AS card_name, inv.name AS investment_name
+  FROM transactions t
+  LEFT JOIN accounts a      ON a.id = t.account_id
+  LEFT JOIN categories c    ON c.id = t.category_id
+  LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
+  LEFT JOIN investments inv ON inv.id = t.investment_id`;
+
+const NOT_DUPLICATE_TRANSFER_LEG = `(t.type != 'transfer' OR t.amount < 0)`;
+
+/** Recent ledger rows, most recent first. */
 export async function listRecentTransactions(limit = 8): Promise<TransactionListItem[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<Record<string, unknown>>(
-    `SELECT t.*, a.name AS account_name, c.name AS category_name, cc.name AS card_name,
-            inv.name AS investment_name
-     FROM transactions t
-     LEFT JOIN accounts a      ON a.id = t.account_id
-     LEFT JOIN categories c    ON c.id = t.category_id
-     LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
-     LEFT JOIN investments inv ON inv.id = t.investment_id
-     WHERE t.type != 'transfer' OR t.amount < 0
+    `${TIMELINE_SELECT}
+     WHERE ${NOT_DUPLICATE_TRANSFER_LEG}
      ORDER BY t.date DESC, t.created_at DESC
      LIMIT ?`,
     [limit],
+  );
+  return rows.map((r) => TransactionListItemSchema.parse(r));
+}
+
+/** Every transaction within a date range, newest first (the statement timeline). */
+export async function listTransactionsInRange(
+  startISO: string,
+  endISO: string,
+): Promise<TransactionListItem[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<Record<string, unknown>>(
+    `${TIMELINE_SELECT}
+     WHERE ${NOT_DUPLICATE_TRANSFER_LEG} AND t.date BETWEEN ? AND ?
+     ORDER BY t.date DESC, t.created_at DESC`,
+    [startISO, endISO],
   );
   return rows.map((r) => TransactionListItemSchema.parse(r));
 }

@@ -6,7 +6,7 @@
  * bounds for SQL `date BETWEEN ? AND ?` queries against the ledger.
  */
 
-import { endOfMonth, endOfYear, format, startOfMonth, startOfYear } from 'date-fns';
+import { addDays, endOfMonth, endOfYear, format, startOfMonth, startOfYear } from 'date-fns';
 
 import { DEFAULT_WEEK_START_DAY, getFinancialWeek } from './financial-week';
 
@@ -37,4 +37,25 @@ export interface ISODateRange {
 
 export function toISODateRange({ start, end }: DateRange): ISODateRange {
   return { startISO: format(start, 'yyyy-MM-dd'), endISO: format(end, 'yyyy-MM-dd') };
+}
+
+/**
+ * Every financial week that overlaps the given range, in order. Used to break a
+ * month into Wed→Tue weeks for the weekly income/spending and savings charts.
+ * The first and last weeks may extend beyond the range.
+ */
+export function financialWeeksInRange(
+  range: DateRange,
+  weekStartDay: number = DEFAULT_WEEK_START_DAY,
+): DateRange[] {
+  const weeks: DateRange[] = [];
+  let cursor = getFinancialWeek(range.start, weekStartDay).start;
+
+  while (cursor <= range.end) {
+    const week = getFinancialWeek(cursor, weekStartDay);
+    weeks.push(week);
+    cursor = addDays(week.start, 7);
+  }
+
+  return weeks;
 }
