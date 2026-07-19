@@ -40,8 +40,16 @@ function Card({ children }: { children: React.ReactNode }) {
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const { totalCash, safeToSpend, netAvailable, cardOutstanding, owedToMe, iOwe } =
-    useFinancialPosition();
+  const {
+    totalCash,
+    safeToSpend,
+    netAvailable,
+    cardOutstanding,
+    owedToMe,
+    iOwe,
+    investments,
+    netWorth,
+  } = useFinancialPosition();
   const { data: income } = useIncomeSummary();
   const { data: cards } = useCreditCards();
   const { data: recent } = useRecentTransactions(6);
@@ -107,6 +115,17 @@ export default function HomeScreen() {
         <View style={styles.row}>
           <StatCard label="Owed to me" value={formatMoney(owedToMe)} tone="success" />
           <StatCard label="I owe" value={formatMoney(iOwe)} tone="danger" />
+        </View>
+      )}
+
+      {investments > 0 && (
+        <View style={styles.row}>
+          <StatCard label="Investments" value={formatMoney(investments)} />
+          <StatCard
+            label="Net Worth"
+            value={formatMoney(netWorth)}
+            tone={netWorth < 0 ? 'danger' : 'neutral'}
+          />
         </View>
       )}
 

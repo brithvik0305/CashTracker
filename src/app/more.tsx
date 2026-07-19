@@ -7,6 +7,9 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ComingSoon } from '@/components/coming-soon';
+import { AddInvestmentModal } from '@/components/investments/add-investment-modal';
+import { InvestmentCard } from '@/components/investments/investment-card';
+import { InvestmentDetailModal } from '@/components/investments/investment-detail-modal';
 import { AddLoanModal } from '@/components/loans/add-loan-modal';
 import { LoanCard } from '@/components/loans/loan-card';
 import { LoanDetailModal } from '@/components/loans/loan-detail-modal';
@@ -16,23 +19,30 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Spacing } from '@/constants/theme';
 import { formatMoney } from '@/domain/money';
+import { useInvestments } from '@/hooks/use-investments';
 import { useLoans } from '@/hooks/use-loans';
+import type { InvestmentWithTotals } from '@/schemas/investment';
 import type { LoanKind, LoanWithTotals } from '@/schemas/loan';
 
 export default function MoreScreen() {
   const { data: lendings } = useLoans('lending');
   const { data: borrowings } = useLoans('borrowing');
+  const { data: investments } = useInvestments();
 
   const [addKind, setAddKind] = useState<LoanKind | null>(null);
   const [detail, setDetail] = useState<{ loan: LoanWithTotals; kind: LoanKind } | null>(null);
+  const [showAddInvestment, setShowAddInvestment] = useState(false);
+  const [investmentDetail, setInvestmentDetail] = useState<InvestmentWithTotals | null>(null);
 
   const lendingList = lendings ?? [];
   const borrowingList = borrowings ?? [];
+  const investmentList = investments ?? [];
   const owedToMe = lendingList.reduce((s, l) => s + Math.max(l.remaining, 0), 0);
   const iOwe = borrowingList.reduce((s, l) => s + Math.max(l.remaining, 0), 0);
+  const portfolio = investmentList.reduce((s, i) => s + i.value, 0);
 
   return (
-    <Screen title="More" subtitle="Lending & borrowing">
+    <Screen title="More" subtitle="Lending, borrowing & investments">
       <View style={styles.row}>
         <StatCard label="Owed to me" value={formatMoney(owedToMe)} tone="success" />
         <StatCard label="I owe" value={formatMoney(iOwe)} tone="danger" />
@@ -58,10 +68,33 @@ export default function MoreScreen() {
         onSelect={(loan) => setDetail({ loan, kind: 'borrowing' })}
       />
 
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            INVESTMENTS {portfolio > 0 ? `· ${formatMoney(portfolio, { decimals: false })}` : ''}
+          </ThemedText>
+          <Button title="Invest" variant="ghost" onPress={() => setShowAddInvestment(true)} />
+        </View>
+        {investmentList.length === 0 ? (
+          <ThemedText type="small" themeColor="textTertiary">
+            Track mutual funds, stocks, gold, or FDs. Investments raise Net Worth but never Safe to
+            Spend.
+          </ThemedText>
+        ) : (
+          investmentList.map((investment) => (
+            <InvestmentCard
+              key={investment.id}
+              investment={investment}
+              onPress={() => setInvestmentDetail(investment)}
+            />
+          ))
+        )}
+      </View>
+
       <ComingSoon
         icon="ellipsis-horizontal"
         milestone="Still to come"
-        description="Investments, search, CSV/JSON export, backups, and settings arrive in the next milestones."
+        description="Search, CSV/JSON export, backups, and settings arrive in the next milestones."
       />
 
       <AddLoanModal
@@ -73,6 +106,14 @@ export default function MoreScreen() {
         loan={detail?.loan ?? null}
         kind={detail?.kind ?? 'lending'}
         onClose={() => setDetail(null)}
+      />
+      <AddInvestmentModal
+        visible={showAddInvestment}
+        onClose={() => setShowAddInvestment(false)}
+      />
+      <InvestmentDetailModal
+        investment={investmentDetail}
+        onClose={() => setInvestmentDetail(null)}
       />
     </Screen>
   );

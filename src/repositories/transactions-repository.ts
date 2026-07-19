@@ -25,6 +25,7 @@ export interface NewTransaction {
   credit_card_id?: number | null;
   lending_id?: number | null;
   borrowing_id?: number | null;
+  investment_id?: number | null;
   counterparty?: string | null;
   transfer_group_id?: string | null;
   date: string; // 'YYYY-MM-DD'
@@ -36,8 +37,8 @@ export async function createTransaction(tx: NewTransaction): Promise<number> {
   const result = await db.runAsync(
     `INSERT INTO transactions
        (type, amount, account_id, category_id, credit_card_id, lending_id, borrowing_id,
-        counterparty, transfer_group_id, date, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        investment_id, counterparty, transfer_group_id, date, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       tx.type,
       tx.amount,
@@ -46,6 +47,7 @@ export async function createTransaction(tx: NewTransaction): Promise<number> {
       tx.credit_card_id ?? null,
       tx.lending_id ?? null,
       tx.borrowing_id ?? null,
+      tx.investment_id ?? null,
       tx.counterparty ?? null,
       tx.transfer_group_id ?? null,
       tx.date,
@@ -150,11 +152,13 @@ export async function addCardPayment(input: CardPaymentInput): Promise<number> {
 export async function listRecentTransactions(limit = 8): Promise<TransactionListItem[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<Record<string, unknown>>(
-    `SELECT t.*, a.name AS account_name, c.name AS category_name, cc.name AS card_name
+    `SELECT t.*, a.name AS account_name, c.name AS category_name, cc.name AS card_name,
+            inv.name AS investment_name
      FROM transactions t
      LEFT JOIN accounts a      ON a.id = t.account_id
      LEFT JOIN categories c    ON c.id = t.category_id
      LEFT JOIN credit_cards cc ON cc.id = t.credit_card_id
+     LEFT JOIN investments inv ON inv.id = t.investment_id
      WHERE t.type != 'transfer' OR t.amount < 0
      ORDER BY t.date DESC, t.created_at DESC
      LIMIT ?`,
@@ -286,7 +290,19 @@ export async function editTransaction(item: TransactionListItem, v: EditValues):
         [(v.direction ?? 1) * v.amount, v.date, v.notes, item.id],
       );
       return;
-    // Loan rows keep their lending_id / borrowing_id link; only the money moves.
+    // Loan and investment rows keep their record link; only the money moves.
+    case 'invest_add':
+      await db.runAsync(
+        `UPDATE transactions SET amount = ?, account_id = ?, date = ?, notes = ?, ${TOUCH} WHERE id = ?`,
+        [-v.amount, v.accountId ?? null, v.date, v.notes, item.id],
+      );
+      return;
+    case 'invest_withdraw':
+      await db.runAsync(
+        `UPDATE transactions SET amount = ?, account_id = ?, date = ?, notes = ?, ${TOUCH} WHERE id = ?`,
+        [v.amount, v.accountId ?? null, v.date, v.notes, item.id],
+      );
+      return;
     case 'lend':
     case 'borrow_repay':
       await db.runAsync(

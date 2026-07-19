@@ -38,9 +38,14 @@ export function describeTransaction(t: TransactionListItem): TransactionDisplay 
     case 'borrow_repay':
       return { ...base, title: `Repaid ${t.counterparty ?? '—'}`, tone: 'negative', icon: 'arrow-up-circle-outline' };
     case 'invest_add':
-      return { ...base, title: 'Investment', tone: 'neutral', icon: 'trending-up-outline' };
+      return { ...base, title: t.investment_name || 'Investment', tone: 'neutral', icon: 'trending-up-outline' };
     case 'invest_withdraw':
-      return { ...base, title: 'Investment withdrawal', tone: 'positive', icon: 'trending-down-outline' };
+      return {
+        ...base,
+        title: t.investment_name ? `${t.investment_name} withdrawal` : 'Investment withdrawal',
+        tone: 'positive',
+        icon: 'trending-down-outline',
+      };
     case 'transfer':
       return { ...base, title: 'Transfer', tone: 'neutral', icon: 'swap-horizontal-outline' };
     case 'adjustment':

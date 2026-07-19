@@ -36,6 +36,8 @@ const EDITABLE = new Set([
   'lend_return',
   'borrow',
   'borrow_repay',
+  'invest_add',
+  'invest_withdraw',
 ]);
 
 /** Types that move money through a bank account and so let you pick one. */
@@ -47,6 +49,8 @@ const HAS_ACCOUNT = new Set([
   'lend_return',
   'borrow',
   'borrow_repay',
+  'invest_add',
+  'invest_withdraw',
 ]);
 
 function DetailContent({ item, onClose }: { item: TransactionListItem; onClose: () => void }) {

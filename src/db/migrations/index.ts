@@ -164,4 +164,29 @@ export const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_transactions_borrowing ON transactions(borrowing_id);
     `,
   },
+  {
+    version: 6,
+    name: 'investments',
+    up: `
+      -- Contributions and withdrawals live in the ledger; the record holds metadata
+      -- plus an optional current market value. When current_value is NULL the
+      -- amount actually invested is used instead.
+      CREATE TABLE IF NOT EXISTS investments (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        name          TEXT    NOT NULL,
+        type          TEXT    NOT NULL DEFAULT 'other'
+                        CHECK (type IN ('mutual_fund', 'stock', 'gold', 'fd', 'other')),
+        current_value INTEGER,
+        notes         TEXT,
+        is_archived   INTEGER NOT NULL DEFAULT 0 CHECK (is_archived IN (0, 1)),
+        sort_order    INTEGER NOT NULL DEFAULT 0,
+        created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+        updated_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+
+      ALTER TABLE transactions ADD COLUMN investment_id INTEGER REFERENCES investments(id);
+
+      CREATE INDEX IF NOT EXISTS idx_transactions_investment ON transactions(investment_id);
+    `,
+  },
 ];
